@@ -1,5 +1,6 @@
 package ru.babarykin.test_task;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -36,11 +37,12 @@ public class TaskConsumer implements Runnable {
 
     private Task getTask() throws InterruptedException {
         Task task = queue.peek();
-        if (task != null && task.shouldExecuteNow()) {
+        LocalDateTime now = LocalDateTime.now();
+        if (task != null && task.shouldExecute(now)) {
             lock.lock();
             try {
                 task = queue.peek();
-                if (task != null && task.shouldExecuteNow()) {
+                if (task != null && task.shouldExecute(now)) {
                     return queue.take();
                 }
             } finally {

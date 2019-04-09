@@ -5,6 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.PriorityBlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.IntStream;
 
 public class TaskExecutor {
@@ -13,6 +14,8 @@ public class TaskExecutor {
 
     private final BlockingQueue<Task> taskQueue;
     private final Thread[] threadPool;
+    private final AtomicLong idGenerator = new AtomicLong(0);
+
 
     public TaskExecutor() {
         this(1);
@@ -31,7 +34,7 @@ public class TaskExecutor {
     }
 
     public <T> CompletableFuture<T> submit(Callable<T> callable, LocalDateTime startTime) {
-        Task<T> task = new Task<>(startTime, callable);
+        Task<T> task = new Task<>(idGenerator.incrementAndGet(), startTime, callable);
         taskQueue.offer(task);
         return task.getCompletableFuture();
     }
