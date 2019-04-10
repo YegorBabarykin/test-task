@@ -21,6 +21,10 @@ public class Task<T> implements Comparable<Task> {
         this.completableFuture = new CompletableFuture<>();
     }
 
+    public LocalDateTime getStartTime() {
+        return startTime;
+    }
+
     public Callable<T> getCallable() {
         return callable;
     }

@@ -9,7 +9,7 @@ import java.util.stream.IntStream;
 import static java.time.temporal.ChronoUnit.MILLIS;
 
 public class App {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         TaskExecutor taskExecutor = new TaskExecutor(10);
         LocalDateTime now = LocalDateTime.now();
         List<CompletableFuture<Integer>> features = IntStream.range(0, 1000)
@@ -18,11 +18,14 @@ public class App {
                     return i;
                 }, now.plus(6 * i, MILLIS)))
                 .collect(Collectors.toList());
+        taskExecutor.submit(() -> null, now.plusDays(1));
         features.forEach(f -> {
             try {
                 System.out.println(f.get());
             } catch (Exception e) {
             }
         });
+
+//        taskExecutor.terminate();
     }
 }
