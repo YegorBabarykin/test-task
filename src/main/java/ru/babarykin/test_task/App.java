@@ -16,9 +16,9 @@ public class App {
                 .mapToObj(i -> taskExecutor.submit(() -> {
                     System.out.println("executing " + i);
                     return i;
-                }, now.plus(6 * i, MILLIS)))
+                }, now.plus(6 * i * i % 2 == 0 ? 1 : -1, MILLIS)))
                 .collect(Collectors.toList());
-        taskExecutor.submit(() -> null, now.plusDays(1));
+        taskExecutor.submit(() -> null, now.plusSeconds(20));
         features.forEach(f -> {
             try {
                 System.out.println(f.get());

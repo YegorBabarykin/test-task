@@ -17,10 +17,8 @@ public class TaskExecutor {
 
     private final AtomicLong idGenerator = new AtomicLong(0);
 
-    private final BlockingQueue<Task> monitorTaskQueue;
     private final BlockingQueue<Task> taskQueue;
     private final Thread[] threadPool;
-    private final Thread taskMonitorThread;
     private final Lock lock;
     private final Condition notEmpty;
 
@@ -33,21 +31,18 @@ public class TaskExecutor {
             throw new IllegalArgumentException("poolSize must be positive");
         }
         taskQueue = new PriorityBlockingQueue<>(INITIAL_QUEUE_CAPACITY, Task::compareTo);
-        monitorTaskQueue = new PriorityBlockingQueue<>(INITIAL_QUEUE_CAPACITY, Task::compareTo);
-        TaskConsumer taskConsumer = new TaskConsumer(taskQueue);
+        lock = new ReentrantLock();
+        notEmpty = lock.newCondition();
+        TaskConsumer taskConsumer = new TaskConsumer(taskQueue, lock, notEmpty);
         threadPool = IntStream.range(0, poolSize)
                 .mapToObj(i -> new Thread(taskConsumer))
                 .peek(Thread::start)
                 .toArray(Thread[]::new);
-        lock = new ReentrantLock();
-        notEmpty = lock.newCondition();
-        taskMonitorThread = new Thread(new TaskMonitor(monitorTaskQueue, taskQueue, lock, notEmpty));
-        taskMonitorThread.start();
     }
 
     public <T> CompletableFuture<T> submit(Callable<T> callable, LocalDateTime startTime) {
         Task<T> task = new Task<>(idGenerator.incrementAndGet(), startTime, callable);
-        monitorTaskQueue.offer(task);
+        taskQueue.offer(task);
         lock.lock();
         notEmpty.signal();
         lock.unlock();
@@ -58,6 +53,5 @@ public class TaskExecutor {
         for (Thread thread : threadPool) {
             thread.interrupt();
         }
-        taskMonitorThread.interrupt();
     }
 }
